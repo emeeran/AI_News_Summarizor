@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced News Aggregator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-newspaper"></i> News Aggregator</h1>
+            <p>Stay informed with news from multiple sources.</p>
+        </header>
+
+        <form method="POST" class="search-form">
+            <label for="topic">Select a topic:</label>
+            <select id="topic" name="topic">
+                <option value="">-- Choose Topic --</option>
+                {% for topic in default_topics %}
+                    <option value="{{ topic }}" {% if topic == selected_topic %}selected{% endif %}>
+                        {{ topic }}
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="text" name="custom_topic" placeholder="Or enter a custom topic..." />
+            <button type="submit"><i class="fas fa-search"></i> Search</button>
+        </form>
+
+        {% if error_message %}
+            <div class="error">{{ error_message }}</div>
+        {% endif %}
+
+        {% if news_articles %}
+            <div class="news-grid">
+                {% for article in news_articles %}
+                    <div class="news-card">
+                        <img src="{{ article.image_url }}" alt="Article Image" loading="lazy" />
+                        <div>
+                            <h3><a href="{{ article.url }}" target="_blank">{{ article.title }}</a></h3>
+                            <p>{{ article.summary }}</p>
+                            <p><small>Source: {{ article.source }}</small></p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
