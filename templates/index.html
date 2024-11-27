@@ -3,49 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced News Aggregator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>News Fetcher</title>
+    <style>
+        #news-results {
+            max-height: 500px; /* Set a max height */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-newspaper"></i> News Aggregator</h1>
-            <p>Stay informed with news from multiple sources.</p>
-        </header>
+<body class="bg-gray-100 flex">
 
-        <form method="POST" class="search-form">
-            <label for="topic">Select a topic:</label>
-            <select id="topic" name="topic">
-                <option value="">-- Choose Topic --</option>
-                {% for topic in default_topics %}
-                    <option value="{{ topic }}" {% if topic == selected_topic %}selected{% endif %}>
-                        {{ topic }}
-                    </option>
-                {% endfor %}
-            </select>
-            <input type="text" name="custom_topic" placeholder="Or enter a custom topic..." />
-            <button type="submit"><i class="fas fa-search"></i> Search</button>
-        </form>
+    <!-- Sidebar for Settings -->
+    <div class="w-1/4 bg-white shadow-md p-4">
+        <h2 class="text-xl font-bold mb-4">Settings</h2>
+        <label class="block mb-2">Topic:</label>
+        <input id="topic" type="text" class="p-2 border rounded mb-4 w-full" placeholder="Enter news topic"/>
 
-        {% if error_message %}
-            <div class="error">{{ error_message }}</div>
-        {% endif %}
+        <label class="block mb-2">Sources:</label>
+        <select id="sources" class="p-2 border rounded mb-4 w-full">
+            <option value="all">All Sources</option>
+            <optgroup label="Indian Sources">
+                <option value="the-hindu">The Hindu</option>
+                <option value="times-of-india">Times of India</option>
+                <option value="ndtv">NDTV</option>
+                <option value="india-today">India Today</option>
+                <option value="business-standard">Business Standard</option>
+                <option value="deccan-herald">Deccan Herald</option>
+                <option value="the-telegraph">The Telegraph</option>
+                <option value="financial-express">Financial Express</option>
+                <option value="news18">News18</option>
+            </optgroup>
+            <optgroup label="International Sources">
+                <option value="cnn">CNN</option>
+                <option value="bbc-news">BBC News</option>
+                <option value="reuters">Reuters</option>
+                <option value="al-jazeera-english">Al Jazeera</option>
+                <option value="the-new-york-times">The New York Times</option>
+                <option value="the-guardian">The Guardian</option>
+                <option value="fox-news">Fox News</option>
+                <option value="huffpost">HuffPost</option>
+                <option value="bloomberg">Bloomberg</option>
+                <option value="cnbc">CNBC</option>
+                <!-- You can add more sources if needed -->
+            </optgroup>
+        </select>
 
-        {% if news_articles %}
-            <div class="news-grid">
-                {% for article in news_articles %}
-                    <div class="news-card">
-                        <img src="{{ article.image_url }}" alt="Article Image" loading="lazy" />
-                        <div>
-                            <h3><a href="{{ article.url }}" target="_blank">{{ article.title }}</a></h3>
-                            <p>{{ article.summary }}</p>
-                            <p><small>Source: {{ article.source }}</small></p>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        <button onclick="fetchNews()" class="bg-blue-500 text-white p-2 rounded w-full hover:bg-blue-600 transition">Fetch News</button>
     </div>
+
+    <!-- Main results area -->
+    <div class="w-3/4 p-4">
+        <h1 class="text-2xl font-bold mb-4">News Results</h1>
+        <div id="news-results" class="bg-white border rounded-md p-2">
+            <!-- News articles will display here -->
+        </div>
+    </div>
+
+    <script>
+        async function fetchNews() {
+            const topic = document.getElementById('topic').value;
+            const sources = document.getElementById('sources').value === 'all' ? '' : document.getElementById('sources').value;
+
+            const response = await fetch('/fetch-news', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topic, sources })
+            });
+
+            if (!response.ok) {
+                alert('Error fetching news. Please try again later.');
+                return;
+            }
+
+            const articles = await response.json();
+            displayNews(articles);
+        }
+
+        function displayNews(articles) {
+            const newsResults = document.getElementById('news-results');
+            newsResults.innerHTML = '';
+
+            if (articles.length === 0) {
+                newsResults.innerHTML = '<p class="text-center text-gray-500">No articles found.</p>';
+                return;
+            }
+
+            articles.forEach(article => {
+                const articleDiv = document.createElement('div');
+                articleDiv.className = 'border-b border-gray-200 mb-4 pb-2 hover:bg-gray-50 transition';
+                articleDiv.innerHTML = `
+                    <h2 class="font-semibold text-md truncate">${article.title}</h2>
+                    <p class="text-gray-500 text-sm">
+                        By ${article.author || 'Unknown'} on ${new Date(article.date).toLocaleDateString()}
+                        | <span class="font-bold">${article.source || 'Unknown Source'}</span>
+                    </p>
+                    <p class="text-gray-700 text-sm">${article.summary || 'No summary available'}</p>
+                    <a href="${article.link}" target="_blank" class="text-blue-500 text-sm hover:underline">Read more</a>
+                `;
+                newsResults.appendChild(articleDiv);
+            });
+        }
+    </script>
+
 </body>
 </html>
